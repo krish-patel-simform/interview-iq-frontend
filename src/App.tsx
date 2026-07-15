@@ -53,7 +53,7 @@ function App() {
 
     try {
       const response = await fetch(
-        `${import.meta.env.BACKEND_URL}+${API_SERVICES.getAIResponse}`,
+        `${import.meta.env.VITE_BACKEND_URL}+${API_SERVICES.getAIResponse}`,
         {
           method: "POST",
           headers: {
