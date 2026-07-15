@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useBlocker, useLocation, useNavigate, useParams } from "react-router";
 import { InterviewHeader, LoadingState, ErrorState } from "../components";
 import { API_SERVICES } from "../services";
@@ -22,7 +22,10 @@ function InterviewPage() {
   // Retrieve config passed from SetupPage; redirect if missing
   const config: InterviewConfig | undefined = location.state?.config;
 
-  const language = (config?.domain ?? "javascript") as CodingLanguage;
+  const rawDomain = config?.domain ?? "javascript";
+  const language = (
+    Object.keys(LANGUAGE_LABELS).includes(rawDomain) ? rawDomain : "javascript"
+  ) as CodingLanguage;
 
   const totalSeconds = (config?.duration ?? 0) * 60;
 
@@ -48,6 +51,8 @@ function InterviewPage() {
   const [code, setCode] = useState(STARTER_CODE[language]);
   const [consoleLines, setConsoleLines] = useState<ConsoleLine[]>([]);
   const [consoleOpen, setConsoleOpen] = useState(false);
+
+  const timerRef = useRef<null | number>(null);
 
   // ── handleSend (shared by chat input AND editor submit) ───────────────────
   const handleSend = useCallback(
@@ -194,6 +199,7 @@ function InterviewPage() {
   // Intentional end (button / timer)
   const handleEndInterview = useCallback(async () => {
     if (isEnding) return;
+    if (timerRef.current) clearInterval(timerRef.current);
     setIsEnding(true);
     setIsProcessing(true); // Disable inputs while ending
     await cleanupAndExit();
@@ -237,10 +243,10 @@ function InterviewPage() {
   useEffect(() => {
     if (!config) return;
 
-    const interval = setInterval(() => {
+    timerRef.current = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
-          clearInterval(interval);
+          clearInterval(timerRef.current);
           handleEndInterview();
           return 0;
         }
@@ -248,7 +254,9 @@ function InterviewPage() {
       });
     }, 1000);
 
-    return () => clearInterval(interval);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
