@@ -22,7 +22,7 @@ function InterviewPage() {
   // Retrieve config passed from SetupPage; redirect if missing
   const config: InterviewConfig | undefined = location.state?.config;
 
-  const language = (config.domain ?? "javascript") as CodingLanguage;
+  const language = (config?.domain ?? "javascript") as CodingLanguage;
 
   const totalSeconds = (config?.duration ?? 0) * 60;
 
