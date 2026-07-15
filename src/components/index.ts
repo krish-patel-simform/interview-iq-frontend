@@ -5,3 +5,4 @@ export * from "./MessageInput";
 export * from "./TypingIndicator";
 export * from "./LoadingState";
 export * from "./ErrorState";
+export * from "./CodeEditor";

@@ -12,63 +12,8 @@ import {
   Target,
 } from "lucide-react";
 import { API_SERVICES } from "../services";
-
-export interface InterviewConfig {
-  domain: string;
-  experience: string;
-  level: string;
-  duration: number; // minutes
-}
-
-const domains = [
-  { value: "react", label: "React" },
-  { value: "typescript", label: "TypeScript" },
-  { value: "javascript", label: "JavaScript" },
-  { value: "nodejs", label: "Node.js" },
-  { value: "python", label: "Python" },
-];
-
-const experiences = [
-  { value: "fresher", label: "Fresher (0 – 1 yr)" },
-  { value: "junior", label: "Junior (1 – 3 yrs)" },
-  { value: "mid", label: "Mid-level (3 – 5 yrs)" },
-  { value: "senior", label: "Senior (5+ yrs)" },
-];
-
-const levels = [
-  {
-    value: "easy",
-    label: "Easy",
-    desc: "Fundamentals & basics",
-    color: "from-emerald-500 to-teal-400",
-    ring: "ring-emerald-300",
-    bg: "bg-emerald-50",
-    text: "text-emerald-700",
-    border: "border-emerald-200",
-  },
-  {
-    value: "medium",
-    label: "Medium",
-    desc: "Real-world scenarios",
-    color: "from-amber-500 to-orange-400",
-    ring: "ring-amber-300",
-    bg: "bg-amber-50",
-    text: "text-amber-700",
-    border: "border-amber-200",
-  },
-  {
-    value: "hard",
-    label: "Hard",
-    desc: "Advanced deep-dives",
-    color: "from-rose-500 to-pink-500",
-    ring: "ring-rose-300",
-    bg: "bg-rose-50",
-    text: "text-rose-700",
-    border: "border-rose-200",
-  },
-];
-
-const durations = [15, 20, 30, 45, 60];
+import type { InterviewConfig } from "../types";
+import { DOMAINS, DURATIONS, EXPERIENCE, LEVELS } from "../consts";
 
 const SetupPage: React.FC = () => {
   const navigate = useNavigate();
@@ -158,7 +103,7 @@ const SetupPage: React.FC = () => {
               <option value="" disabled style={{ background: "#1e1b4b" }}>
                 Select a domain…
               </option>
-              {domains.map((d) => (
+              {DOMAINS.map((d) => (
                 <option
                   key={d.value}
                   value={d.value}
@@ -191,7 +136,7 @@ const SetupPage: React.FC = () => {
               <option value="" disabled style={{ background: "#1e1b4b" }}>
                 Select experience level…
               </option>
-              {experiences.map((e) => (
+              {EXPERIENCE.map((e) => (
                 <option
                   key={e.value}
                   value={e.value}
@@ -212,7 +157,7 @@ const SetupPage: React.FC = () => {
             Difficulty Level
           </label>
           <div className="grid grid-cols-3 gap-3">
-            {levels.map((lvl) => (
+            {LEVELS.map((lvl) => (
               <button
                 key={lvl.value}
                 id={`level-${lvl.value}`}
@@ -262,7 +207,7 @@ const SetupPage: React.FC = () => {
             </span>
           </label>
           <div className="flex gap-2 flex-wrap">
-            {durations.map((d) => (
+            {DURATIONS.map((d) => (
               <button
                 key={d}
                 id={`duration-${d}`}

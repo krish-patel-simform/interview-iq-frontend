@@ -1,18 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
 import { useBlocker, useLocation, useNavigate, useParams } from "react-router";
-import {
-  InterviewHeader,
-  ChatContainer,
-  MessageBubble,
-  MessageInput,
-  TypingIndicator,
-  LoadingState,
-  ErrorState,
-} from "../components";
+import { InterviewHeader, LoadingState, ErrorState } from "../components";
 import { API_SERVICES } from "../services";
-import type { InterviewConfig } from "./SetupPage";
 import { formatTime } from "../utils";
-import type { Message } from "../types";
+import type {
+  CodingLanguage,
+  ConsoleLine,
+  InterviewConfig,
+  Message,
+} from "../types";
+
+import EditorPanel from "../components/EditorPanel";
+import ChatPanel from "../components/ChatPanel";
+import { LANGUAGE_LABELS, STARTER_CODE } from "../consts";
 
 function InterviewPage() {
   const location = useLocation();
@@ -22,7 +22,11 @@ function InterviewPage() {
   // Retrieve config passed from SetupPage; redirect if missing
   const config: InterviewConfig | undefined = location.state?.config;
 
+  const isCoding = config?.type === "coding";
+  const language = (config?.language ?? "javascript") as CodingLanguage;
+
   const totalSeconds = (config?.duration ?? 0) * 60;
+
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "model",
@@ -41,55 +45,105 @@ function InterviewPage() {
   const [timeLeft, setTimeLeft] = useState(totalSeconds);
   const [interviewActive, setInterviewActive] = useState(true);
 
-  const handleSend = async () => {
-    if (!inputValue.trim()) return;
+  // Coding editor state
+  const [code, setCode] = useState(STARTER_CODE[language]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [consoleLines, setConsoleLines] = useState<ConsoleLine[]>([]);
+  const [consoleOpen, setConsoleOpen] = useState(false);
 
-    const timeInfo = {
-      timestamp: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    };
+  // ── handleSend (shared by chat input AND editor submit) ───────────────────
+  const handleSend = useCallback(
+    async (overrideMessage?: string) => {
+      const message = overrideMessage ?? inputValue;
+      if (!message.trim()) return;
 
-    setMessages((prev) => [
-      ...prev,
-      { role: "user" as const, content: inputValue, ...timeInfo },
-    ]);
-    setInputValue("");
-    setIsTyping(true);
+      const timeInfo = {
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      };
 
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}${API_SERVICES.getAIResponse}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            answer: inputValue,
-            userId,
-          }),
-        },
-      );
-      if (!response.ok) throw new Error("Failed to fetch AI response");
-      const data = await response.json();
       setMessages((prev) => [
         ...prev,
+        { role: "user" as const, content: message, ...timeInfo },
+      ]);
+
+      // Only clear the chat input when it's a text message (not a code submission)
+      if (!overrideMessage) setInputValue("");
+      setIsTyping(true);
+
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}${API_SERVICES.getAIResponse}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              answer: message,
+              userId,
+            }),
+          },
+        );
+        if (!response.ok) throw new Error("Failed to fetch AI response");
+        const data = await response.json();
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "model",
+            content: data.answer,
+            timestamp: new Date().toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+          },
+        ]);
+      } catch (error) {
+        console.error("Error fetching AI response:", error);
+      } finally {
+        setIsTyping(false);
+      }
+    },
+    [inputValue, userId],
+  );
+
+  // ── Submit Code: wraps code in a readable message then calls handleSend ───
+  const handleSubmitCode = useCallback(async () => {
+    if (isSubmitting || !code.trim()) return;
+    setIsSubmitting(true);
+    setConsoleOpen(true);
+    setConsoleLines([
+      { type: "info", text: "Submitting code to AI interviewer…" },
+    ]);
+
+    const codeMessage = `Here is my ${LANGUAGE_LABELS[language]} solution:\n\`\`\`${language}\n${code}\n\`\`\``;
+
+    try {
+      await handleSend(codeMessage);
+      setConsoleLines((prev) => [
+        ...prev,
         {
-          role: "model",
-          content: data.answer,
-          timestamp: new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
+          type: "success",
+          text: "Code submitted successfully. Check the chat for AI feedback.",
         },
       ]);
-    } catch (error) {
-      console.error("Error fetching AI response:", error);
+    } catch {
+      setConsoleLines((prev) => [
+        ...prev,
+        { type: "error", text: "Submission failed. Please try again." },
+      ]);
     } finally {
-      setIsTyping(false);
+      setIsSubmitting(false);
     }
-  };
+  }, [code, handleSend, isSubmitting, language]);
 
+  // ── Reset editor to starter code
+  const handleResetCode = useCallback(() => {
+    setCode(STARTER_CODE[language]);
+    setConsoleLines([]);
+  }, [language]);
+
+  // ── Cleanup & exit
   const cleanupAndExit = useCallback(async () => {
     try {
       const response = await fetch(
@@ -121,26 +175,22 @@ function InterviewPage() {
 
   const blocker = useBlocker(interviewActive);
 
-  // useEffect for the prevent the unIntentionally leave the page
+  // Prevent unintentional page leave
   useEffect(() => {
-    // 1. beforeunload: tab close / refresh / external navigation
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (!interviewActive) return;
       e.preventDefault();
-      // sendBeacon survives page unload; fetch would be cancelled
       navigator.sendBeacon(
         `${import.meta.env.VITE_BACKEND_URL}${API_SERVICES.removeCandidate}`,
         JSON.stringify({ userId }),
       );
     };
 
-    // 2. useBlocker: intercept in-app route navigation
     function handleBlocker() {
       if (blocker.state === "blocked") {
         const confirmed = window.confirm(
           "Are you sure you want to leave? Your interview session will be ended and your progress will be lost.",
         );
-
         if (confirmed) {
           handleEndInterview();
           blocker.proceed();
@@ -157,7 +207,7 @@ function InterviewPage() {
     };
   }, [blocker, interviewActive, userId, handleEndInterview]);
 
-  // Use Efefct for the countdown
+  // Countdown timer
   useEffect(() => {
     if (!config) return;
 
@@ -192,7 +242,9 @@ function InterviewPage() {
     config.domain.charAt(0).toUpperCase() + config.domain.slice(1);
   const levelLabel =
     config.level.charAt(0).toUpperCase() + config.level.slice(1);
-  const headerRole = `${domainLabel} Interview — ${levelLabel} · ${config.duration} min`;
+  const headerRole = isCoding
+    ? `${domainLabel} Coding Interview — ${levelLabel} · ${config.duration} min`
+    : `${domainLabel} Interview — ${levelLabel} · ${config.duration} min`;
 
   // Timer turns red in the last 60 seconds
   const isLowTime = timeLeft <= 60;
@@ -212,27 +264,38 @@ function InterviewPage() {
         isEnding={isEnding}
       />
 
-      <ChatContainer className="relative z-10">
-        <div className="flex flex-col space-y-6 pb-24">
-          {messages.map((msg, index) => (
-            <MessageBubble
-              key={index}
-              role={msg.role}
-              content={msg.content}
-              timestamp={msg.timestamp}
+      {/* ── Body ─────────────────────────────────────────────────────────── */}
+      <div className="flex flex-1 min-h-0 relative z-10">
+        {/* LEFT: Chat panel (always shown) */}
+        <ChatPanel
+          messages={messages}
+          isTyping={isTyping}
+          inputValue={inputValue}
+          onChange={setInputValue}
+          onSend={handleSend}
+          isCoding={isCoding}
+        />
+
+        {/* RIGHT: Monaco editor (only for coding interview) */}
+        {isCoding && (
+          <>
+            {/* Divider */}
+            <div className="w-px bg-white/8 shrink-0" />
+
+            <EditorPanel
+              language={language}
+              code={code}
+              onCodeChange={setCode}
+              onSubmit={handleSubmitCode}
+              onReset={handleResetCode}
+              isSubmitting={isSubmitting}
+              consoleLines={consoleLines}
+              consoleOpen={consoleOpen}
+              onToggleConsole={() => setConsoleOpen((o) => !o)}
             />
-          ))}
-          {isTyping && <TypingIndicator />}
-        </div>
-        <div className="fixed bottom-0 left-0 right-0 z-20">
-          <MessageInput
-            value={inputValue}
-            onChange={setInputValue}
-            onSend={handleSend}
-            isLoading={isTyping}
-          />
-        </div>
-      </ChatContainer>
+          </>
+        )}
+      </div>
     </div>
   );
 }
