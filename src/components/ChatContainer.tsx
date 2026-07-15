@@ -42,5 +42,4 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   );
 };
 
-// Plan: actually i am building an AI based interview so i have implememt the basic  workflow but in my backed i have maintain the history usonf map where key is sessionid of user but i want to keep as userId or something else and also system prompt contains the domain and experience and level of difficulty so ibefore the interview start i want to ask these question and also an duration as well so interview will end after that duration and once it is end now it time to show feedback and suggestion like where to improve etc
-// so you have create an workflow from starting and
+//
