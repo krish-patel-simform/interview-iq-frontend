@@ -29,21 +29,23 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     >
       <div
         className={cn(
-          "flex max-w-[85%] sm:max-w-[75%] gap-4",
+          "flex max-w-[85%] sm:max-w-[75%] gap-3",
           isUser ? "flex-row-reverse" : "flex-row",
         )}
       >
+        {/* Avatar */}
         <div
           className={cn(
-            "flex h-10 w-10 shrink-0 items-center justify-center rounded-full shadow-sm border",
+            "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border",
             isUser
-              ? "bg-gradient-to-br from-indigo-100 to-indigo-200 border-indigo-300 text-indigo-700"
-              : "bg-gradient-to-br from-purple-100 to-purple-200 border-purple-300 text-purple-700",
+              ? "bg-gradient-to-br from-indigo-500/20 to-indigo-600/30 border-indigo-500/30 text-indigo-300"
+              : "bg-gradient-to-br from-purple-500/20 to-purple-600/30 border-purple-500/30 text-purple-300",
           )}
         >
-          {isUser ? <User className="h-5 w-5" /> : <Bot className="h-5 w-5" />}
+          {isUser ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
         </div>
 
+        {/* Bubble */}
         <div
           className={cn(
             "flex flex-col gap-1.5",
@@ -52,16 +54,16 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         >
           <div
             className={cn(
-              "px-5 py-3.5 rounded-2xl shadow-sm text-[15px] leading-relaxed",
+              "px-4 py-3 rounded-2xl text-[14.5px] leading-relaxed",
               isUser
-                ? "bg-indigo-600 text-white rounded-tr-sm"
-                : "bg-white border border-gray-100 text-gray-800 rounded-tl-sm shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)]",
+                ? "bg-indigo-600/80 text-white rounded-tr-sm border border-indigo-500/40 shadow-lg shadow-indigo-500/20"
+                : "bg-white/6 border border-white/10 text-white/90 rounded-tl-sm backdrop-blur-sm",
             )}
           >
             <p className="whitespace-pre-wrap break-words">{content}</p>
           </div>
           {timestamp && (
-            <span className="text-[11px] font-medium text-gray-400 px-1">
+            <span className="text-[10px] font-medium text-white/25 px-1">
               {timestamp}
             </span>
           )}

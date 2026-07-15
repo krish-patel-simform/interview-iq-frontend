@@ -109,15 +109,19 @@ function InterviewPage() {
   const headerRole = `${domainLabel} Interview — ${levelLabel} · ${config.duration} min`;
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50/50">
+    <div className="flex flex-col h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-purple-950 relative overflow-hidden">
+      {/* Ambient blobs */}
+      <div className="absolute top-[-120px] left-[-80px] w-[420px] h-[420px] bg-indigo-600/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-[-100px] right-[-60px] w-[380px] h-[380px] bg-purple-600/15 rounded-full blur-3xl pointer-events-none" />
+
       <InterviewHeader
         role={headerRole}
-        duration={`${config.duration}:00`}
+        duration={`${String(config.duration).padStart(2, "0")}:00`}
         isConnected={true}
       />
 
-      <ChatContainer>
-        <div className="flex flex-col space-y-6 pb-20">
+      <ChatContainer className="relative z-10">
+        <div className="flex flex-col space-y-6 pb-24">
           {messages.map((msg, index) => (
             <MessageBubble
               key={index}
@@ -128,7 +132,7 @@ function InterviewPage() {
           ))}
           {isTyping && <TypingIndicator />}
         </div>
-        <div className="fixed bottom-0 left-0 right-0">
+        <div className="fixed bottom-0 left-0 right-0 z-20">
           <MessageInput
             value={inputValue}
             onChange={setInputValue}
@@ -138,6 +142,7 @@ function InterviewPage() {
         </div>
       </ChatContainer>
     </div>
+
   );
 }
 

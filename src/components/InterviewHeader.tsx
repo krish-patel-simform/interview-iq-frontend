@@ -18,45 +18,48 @@ export const InterviewHeader: React.FC<InterviewHeaderProps> = ({
   return (
     <header
       className={cn(
-        "flex items-center justify-between px-6 py-4 bg-white/80 backdrop-blur-md border-b border-gray-200/50 shadow-sm sticky top-0 z-50",
+        "flex items-center justify-between px-6 py-4 sticky top-0 z-50",
+        "bg-slate-950/80 backdrop-blur-xl border-b border-white/8",
         className,
       )}
     >
+      {/* Left — brand + session info */}
       <div className="flex items-center gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-md">
-          <Monitor className="h-6 w-6 text-white" />
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/25">
+          <Monitor className="h-5 w-5 text-white" />
         </div>
         <div>
-          <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">
+          <h1 className="text-base font-bold text-white leading-tight">
             {role}
           </h1>
-          <div className="flex items-center gap-2 text-sm text-gray-500 font-medium mt-0.5">
-            <span className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2 mt-0.5">
+            <span
+              className={cn(
+                "relative flex h-2 w-2",
+                isConnected ? "text-emerald-400" : "text-rose-400",
+              )}
+            >
+              {isConnected && (
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+              )}
               <span
                 className={cn(
-                  "relative flex h-2.5 w-2.5",
-                  isConnected ? "text-emerald-500" : "text-rose-500",
+                  "relative inline-flex h-2 w-2 rounded-full",
+                  isConnected ? "bg-emerald-400" : "bg-rose-400",
                 )}
-              >
-                {isConnected && (
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-                )}
-                <span
-                  className={cn(
-                    "relative inline-flex h-2.5 w-2.5 rounded-full",
-                    isConnected ? "bg-emerald-500" : "bg-rose-500",
-                  )}
-                ></span>
-              </span>
+              />
+            </span>
+            <span className="text-xs font-medium text-white/40">
               {isConnected ? "Connected to AI" : "Disconnected"}
             </span>
           </div>
         </div>
       </div>
 
-      <div className="flex items-center gap-3 px-4 py-2 bg-indigo-50/50 rounded-lg border border-indigo-100/50 shadow-inner">
-        <Clock className="h-4 w-4 text-indigo-600" />
-        <span className="font-mono text-indigo-900 font-semibold tracking-wide">
+      {/* Right — timer */}
+      <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 shadow-inner">
+        <Clock className="h-4 w-4 text-indigo-400" />
+        <span className="font-mono text-sm font-semibold text-indigo-300 tracking-widest">
           {duration}
         </span>
       </div>

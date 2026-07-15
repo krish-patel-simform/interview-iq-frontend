@@ -10,6 +10,7 @@ import {
   Sparkles,
   Target,
 } from "lucide-react";
+import { API_SERVICES } from "../services";
 
 export interface InterviewConfig {
   domain: string;
@@ -80,9 +81,21 @@ const SetupPage: React.FC = () => {
 
   const isValid = form.domain && form.experience && form.level && form.duration;
 
-  const handleStart = () => {
+  const handleStart = async () => {
     if (!isValid) return;
-    navigate("/interview", { state: { config: form } });
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}${API_SERVICES.setupCandidateInterview}`,
+      );
+      if (!response.ok) throw new Error("Response is not successed");
+      const jsonRes = await response.json();
+
+      if (jsonRes.success) {
+        navigate("/interview", { state: { config: form } });
+      }
+    } catch (error) {
+      console.log("Error in the setup page : ", error);
+    }
   };
 
   return (
@@ -94,7 +107,6 @@ const SetupPage: React.FC = () => {
 
       {/* Card */}
       <div className="relative w-full max-w-xl bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl p-8 flex flex-col gap-7">
-
         {/* Header */}
         <div className="flex flex-col items-center gap-3 text-center">
           <div className="relative flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30">
@@ -124,7 +136,9 @@ const SetupPage: React.FC = () => {
             <select
               id="domain-select"
               value={form.domain}
-              onChange={(e) => setForm((p) => ({ ...p, domain: e.target.value }))}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, domain: e.target.value }))
+              }
               className="w-full appearance-none border border-white/12 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all cursor-pointer"
               style={{ background: "rgba(255,255,255,0.06)" }}
             >
@@ -132,7 +146,11 @@ const SetupPage: React.FC = () => {
                 Select a domain…
               </option>
               {domains.map((d) => (
-                <option key={d.value} value={d.value} style={{ background: "#1e1b4b" }}>
+                <option
+                  key={d.value}
+                  value={d.value}
+                  style={{ background: "#1e1b4b" }}
+                >
                   {d.label}
                 </option>
               ))}
@@ -161,7 +179,11 @@ const SetupPage: React.FC = () => {
                 Select experience level…
               </option>
               {experiences.map((e) => (
-                <option key={e.value} value={e.value} style={{ background: "#1e1b4b" }}>
+                <option
+                  key={e.value}
+                  value={e.value}
+                  style={{ background: "#1e1b4b" }}
+                >
                   {e.label}
                 </option>
               ))}
@@ -190,7 +212,9 @@ const SetupPage: React.FC = () => {
                 }`}
                 style={{
                   background:
-                    form.level === lvl.value ? undefined : "rgba(255,255,255,0.05)",
+                    form.level === lvl.value
+                      ? undefined
+                      : "rgba(255,255,255,0.05)",
                 }}
               >
                 <span
@@ -258,7 +282,9 @@ const SetupPage: React.FC = () => {
             background: isValid
               ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
               : "rgba(255,255,255,0.08)",
-            boxShadow: isValid ? "0 10px 40px -10px rgba(99,102,241,0.7)" : "none",
+            boxShadow: isValid
+              ? "0 10px 40px -10px rgba(99,102,241,0.7)"
+              : "none",
           }}
         >
           {isValid && (
