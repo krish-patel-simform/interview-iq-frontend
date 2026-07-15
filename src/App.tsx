@@ -9,6 +9,7 @@ import {
   ErrorState,
   type MessageRole,
 } from "./components";
+import { API_SERVICES } from "./services";
 
 interface Message {
   role: MessageRole;
@@ -52,7 +53,7 @@ function App() {
 
     try {
       const response = await fetch(
-        "http://localhost:4000/api/ai/get-ai-response",
+        `${import.meta.env.BACKEND_URL}+${API_SERVICES.getAIResponse}`,
         {
           method: "POST",
           headers: {
