@@ -257,7 +257,7 @@ function InterviewPage() {
     timerRef.current = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
-          clearInterval(timerRef.current);
+          if (timerRef.current) clearInterval(timerRef.current);
           handleEndInterview();
           return 0;
         }
