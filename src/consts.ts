@@ -33,10 +33,10 @@ export const STARTER_CODE: Record<CodingLanguage, string> = {
 };
 
 export const DOMAINS = [
-  { value: "javascript", label: "React" },
+  { value: "react", label: "React" },
   { value: "typescript", label: "TypeScript" },
   { value: "javascript", label: "JavaScript" },
-  { value: "javascript", label: "Node.js" },
+  { value: "node", label: "Node.js" },
   { value: "python", label: "Python" },
 ];
 
