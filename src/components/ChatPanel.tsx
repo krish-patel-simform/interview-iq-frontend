@@ -1,12 +1,12 @@
 import { useEffect, useRef } from "react";
-import { MessageBubble, MessageInput, TypingIndicator } from ".";
+import { ChatContainer, MessageBubble, MessageInput, TypingIndicator } from ".";
 import type { Message } from "../types";
 import { cn } from "../lib/utils";
 
 // ─── Chat panel (left) ────────────────────────────────────────────────────────
 interface ChatPanelProps {
   messages: Message[];
-  isTyping: boolean;
+  isProcessing: boolean;
   inputValue: string;
   onChange: (v: string) => void;
   onSend: () => void;
@@ -15,7 +15,7 @@ interface ChatPanelProps {
 
 const ChatPanel: React.FC<ChatPanelProps> = ({
   messages,
-  isTyping,
+  isProcessing,
   inputValue,
   onChange,
   onSend,
@@ -25,10 +25,10 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isTyping]);
+  }, [messages, isProcessing]);
 
   return (
-    <div
+    <ChatContainer
       className={cn(
         "flex flex-col bg-slate-950/60 border-r border-white/8",
         isCoding ? "w-[42%] shrink-0" : "flex-1",
@@ -50,7 +50,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
             timestamp={msg.timestamp}
           />
         ))}
-        {isTyping && <TypingIndicator />}
+        {isProcessing && <TypingIndicator />}
         <div ref={bottomRef} />
       </div>
 
@@ -59,9 +59,9 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         value={inputValue}
         onChange={onChange}
         onSend={onSend}
-        isLoading={isTyping}
+        isLoading={isProcessing}
       />
-    </div>
+    </ChatContainer>
   );
 };
 export default ChatPanel;

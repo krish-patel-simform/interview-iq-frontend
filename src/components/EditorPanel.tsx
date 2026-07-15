@@ -19,7 +19,7 @@ interface EditorPanelProps {
   onCodeChange: (c: string) => void;
   onSubmit: () => void;
   onReset: () => void;
-  isSubmitting: boolean;
+  isProcessing: boolean;
   consoleLines: ConsoleLine[];
   consoleOpen: boolean;
   onToggleConsole: () => void;
@@ -31,7 +31,7 @@ const EditorPanel: React.FC<EditorPanelProps> = ({
   onCodeChange,
   onSubmit,
   onReset,
-  isSubmitting,
+  isProcessing,
   consoleLines,
   consoleOpen,
   onToggleConsole,
@@ -78,10 +78,10 @@ const EditorPanel: React.FC<EditorPanelProps> = ({
             id="editor-submit-btn"
             type="button"
             onClick={onSubmit}
-            disabled={isSubmitting}
+            disabled={isProcessing}
             className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold border border-violet-500/40 bg-violet-600/20 text-violet-300 hover:bg-violet-600/30 hover:text-violet-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 shadow-sm shadow-violet-500/10"
           >
-            {isSubmitting ? (
+            {isProcessing ? (
               <>
                 <Play className="w-3.5 h-3.5 animate-pulse" />
                 Submitting…

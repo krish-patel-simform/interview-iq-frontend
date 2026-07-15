@@ -105,7 +105,7 @@ const SetupPage: React.FC = () => {
               </option>
               {DOMAINS.map((d) => (
                 <option
-                  key={d.value}
+                  key={d.label}
                   value={d.value}
                   style={{ background: "#1e1b4b" }}
                 >
