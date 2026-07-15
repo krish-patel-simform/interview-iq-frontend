@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useBlocker, useLocation, useNavigate, useParams } from "react-router";
-import { InterviewHeader, LoadingState, ErrorState } from "../components";
+import {
+  InterviewHeader,
+  LoadingState,
+  ErrorState,
+  FeedbackModal,
+} from "../components";
 import { API_SERVICES } from "../services";
 import { formatTime } from "../utils";
 import type {
@@ -46,6 +51,7 @@ function InterviewPage() {
   const [status, setStatus] = useState<"loading" | "error" | "ready">("ready");
   const [timeLeft, setTimeLeft] = useState(totalSeconds);
   const [interviewActive, setInterviewActive] = useState(true);
+  const [feedback, setFeedback] = useState<string | null>(null);
 
   // Coding editor state
   const [code, setCode] = useState(STARTER_CODE[language]);
@@ -187,12 +193,17 @@ function InterviewPage() {
 
       if (!response.ok) throw new Error("Fail to remove the candidate");
       const jsonRes = await response.json();
-      console.log(jsonRes.feedback);
+      // Show feedback modal instead of navigating immediately
+      if (jsonRes.feedback) {
+        setFeedback(jsonRes.feedback);
+      } else {
+        navigate("/");
+      }
     } catch (error) {
       console.error("Error removing candidate session:", error);
+      navigate("/");
     } finally {
       setInterviewActive(false);
-      navigate("/");
     }
   }, [navigate, userId]);
 
@@ -326,6 +337,11 @@ function InterviewPage() {
           />
         </>
       </div>
+
+      {/* Feedback modal — shown after interview ends */}
+      {feedback !== null && (
+        <FeedbackModal feedback={feedback} onDone={() => navigate("/")} />
+      )}
     </div>
   );
 }
