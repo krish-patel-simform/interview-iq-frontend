@@ -10,7 +10,7 @@ const routesConfig: RouteObject[] = [
     Component: SetupPage,
   },
   {
-    path: "/interview",
+    path: "/interview/:userId",
     Component: InterviewPage,
   },
 ];

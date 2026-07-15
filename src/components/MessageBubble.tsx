@@ -1,10 +1,9 @@
 import React from "react";
 import { cn } from "../lib/utils";
 import { Bot, User } from "lucide-react";
+import type { MessageRole } from "../types";
 
-export type MessageRole = "model" | "user";
-
-interface MessageBubbleProps {
+export interface MessageBubbleProps {
   role: MessageRole;
   content: string;
   timestamp?: string;

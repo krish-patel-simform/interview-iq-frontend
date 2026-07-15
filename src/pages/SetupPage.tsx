@@ -7,6 +7,7 @@ import {
   Clock,
   Code2,
   Layers,
+  Loader2,
   Sparkles,
   Target,
 } from "lucide-react";
@@ -78,23 +79,35 @@ const SetupPage: React.FC = () => {
     level: "",
     duration: 30,
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   const isValid = form.domain && form.experience && form.level && form.duration;
 
   const handleStart = async () => {
-    if (!isValid) return;
+    if (!isValid || isLoading) return;
+    setIsLoading(true);
     try {
+      const userId = crypto.randomUUID();
       const response = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}${API_SERVICES.setupCandidateInterview}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ ...form, userId }),
+        },
       );
       if (!response.ok) throw new Error("Response is not successed");
       const jsonRes = await response.json();
 
       if (jsonRes.success) {
-        navigate("/interview", { state: { config: form } });
+        navigate(`/interview/${userId}`, { state: { config: form } });
       }
     } catch (error) {
       console.log("Error in the setup page : ", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -275,24 +288,35 @@ const SetupPage: React.FC = () => {
         <button
           id="start-interview-btn"
           type="button"
-          disabled={!isValid}
+          disabled={!isValid || isLoading}
           onClick={handleStart}
           className="relative flex items-center justify-center gap-2 w-full py-4 rounded-2xl font-bold text-base text-white transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed group overflow-hidden"
           style={{
-            background: isValid
-              ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
-              : "rgba(255,255,255,0.08)",
-            boxShadow: isValid
-              ? "0 10px 40px -10px rgba(99,102,241,0.7)"
-              : "none",
+            background:
+              isValid && !isLoading
+                ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
+                : "rgba(255,255,255,0.08)",
+            boxShadow:
+              isValid && !isLoading
+                ? "0 10px 40px -10px rgba(99,102,241,0.7)"
+                : "none",
           }}
         >
-          {isValid && (
+          {isValid && !isLoading && (
             <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" />
           )}
-          <Target className="w-5 h-5" />
-          Start Interview
-          <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
+          {isLoading ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Setting up your interview…
+            </>
+          ) : (
+            <>
+              <Target className="w-5 h-5" />
+              Start Interview
+              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
+            </>
+          )}
         </button>
       </div>
     </div>

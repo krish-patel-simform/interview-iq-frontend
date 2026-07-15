@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useLocation, useNavigate } from "react-router";
+import { useCallback, useEffect, useState } from "react";
+import { useBlocker, useLocation, useNavigate, useParams } from "react-router";
 import {
   InterviewHeader,
   ChatContainer,
@@ -8,24 +8,21 @@ import {
   TypingIndicator,
   LoadingState,
   ErrorState,
-  type MessageRole,
 } from "../components";
 import { API_SERVICES } from "../services";
 import type { InterviewConfig } from "./SetupPage";
-
-interface Message {
-  role: MessageRole;
-  content: string;
-  timestamp: string;
-}
+import { formatTime } from "../utils";
+import type { Message } from "../types";
 
 function InterviewPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { userId } = useParams();
 
   // Retrieve config passed from SetupPage; redirect if missing
   const config: InterviewConfig | undefined = location.state?.config;
 
+  const totalSeconds = (config?.duration ?? 0) * 60;
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "model",
@@ -39,7 +36,10 @@ function InterviewPage() {
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [isEnding, setIsEnding] = useState(false);
   const [status, setStatus] = useState<"loading" | "error" | "ready">("ready");
+  const [timeLeft, setTimeLeft] = useState(totalSeconds);
+  const [interviewActive, setInterviewActive] = useState(true);
 
   const handleSend = async () => {
     if (!inputValue.trim()) return;
@@ -66,7 +66,7 @@ function InterviewPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             answer: inputValue,
-            sessionId: "123",
+            userId,
           }),
         },
       );
@@ -90,6 +90,92 @@ function InterviewPage() {
     }
   };
 
+  const cleanupAndExit = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}${API_SERVICES.removeCandidate}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId }),
+        },
+      );
+
+      if (!response.ok) throw new Error("Fail to remove the candidate");
+      const jsonRes = await response.json();
+      console.log(jsonRes.feedback);
+    } catch (error) {
+      console.error("Error removing candidate session:", error);
+    } finally {
+      setInterviewActive(false);
+      navigate("/");
+    }
+  }, [navigate, userId]);
+
+  // Intentional end (button / timer)
+  const handleEndInterview = useCallback(async () => {
+    if (isEnding) return;
+    setIsEnding(true);
+    await cleanupAndExit();
+  }, [cleanupAndExit, isEnding]);
+
+  const blocker = useBlocker(interviewActive);
+
+  // useEffect for the prevent the unIntentionally leave the page
+  useEffect(() => {
+    // 1. beforeunload: tab close / refresh / external navigation
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!interviewActive) return;
+      e.preventDefault();
+      // sendBeacon survives page unload; fetch would be cancelled
+      navigator.sendBeacon(
+        `${import.meta.env.VITE_BACKEND_URL}${API_SERVICES.removeCandidate}`,
+        JSON.stringify({ userId }),
+      );
+    };
+
+    // 2. useBlocker: intercept in-app route navigation
+    function handleBlocker() {
+      if (blocker.state === "blocked") {
+        const confirmed = window.confirm(
+          "Are you sure you want to leave? Your interview session will be ended and your progress will be lost.",
+        );
+
+        if (confirmed) {
+          handleEndInterview();
+          blocker.proceed();
+        } else {
+          blocker.reset();
+        }
+      }
+    }
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    handleBlocker();
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [blocker, interviewActive, userId, handleEndInterview]);
+
+  // Use Efefct for the countdown
+  useEffect(() => {
+    if (!config) return;
+
+    const interval = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          handleEndInterview();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // If no config, redirect back to setup
   if (!config) {
     navigate("/");
@@ -108,6 +194,9 @@ function InterviewPage() {
     config.level.charAt(0).toUpperCase() + config.level.slice(1);
   const headerRole = `${domainLabel} Interview — ${levelLabel} · ${config.duration} min`;
 
+  // Timer turns red in the last 60 seconds
+  const isLowTime = timeLeft <= 60;
+
   return (
     <div className="flex flex-col h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-purple-950 relative overflow-hidden">
       {/* Ambient blobs */}
@@ -116,8 +205,11 @@ function InterviewPage() {
 
       <InterviewHeader
         role={headerRole}
-        duration={`${String(config.duration).padStart(2, "0")}:00`}
+        duration={formatTime(timeLeft)}
+        isLowTime={isLowTime}
         isConnected={true}
+        onEndInterview={handleEndInterview}
+        isEnding={isEnding}
       />
 
       <ChatContainer className="relative z-10">
@@ -142,7 +234,6 @@ function InterviewPage() {
         </div>
       </ChatContainer>
     </div>
-
   );
 }
 
