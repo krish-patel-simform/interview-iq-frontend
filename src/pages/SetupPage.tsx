@@ -47,7 +47,7 @@ const SetupPage: React.FC = () => {
       const jsonRes = await response.json();
 
       if (jsonRes.success) {
-        navigate(`/interview/${userId}`, { state: { config: form } });
+        navigate(`/interview/${userId}`, { state: { config: { ...form } } });
       }
     } catch (error) {
       console.log("Error in the setup page : ", error);
