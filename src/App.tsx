@@ -49,11 +49,9 @@ function App() {
     setInputValue("");
     setIsTyping(true);
 
-    // Simulate AI response
-
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}+${API_SERVICES.getAIResponse}`,
+        `${import.meta.env.VITE_BACKEND_URL}${API_SERVICES.getAIResponse}`,
         {
           method: "POST",
           headers: {
