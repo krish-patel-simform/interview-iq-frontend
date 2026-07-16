@@ -22,9 +22,10 @@ export const MessageInput: React.FC<MessageInputProps> = ({
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const { isListening, isSupported, toggleListening } = useSpeechToText({
-    onTranscriptChange: onChange,
-  });
+  const { isListening, isSupported, toggleListening, stopListening } =
+    useSpeechToText({
+      onTranscriptChange: onChange,
+    });
 
   // Auto-resize textarea based on content
   useEffect(() => {
@@ -39,6 +40,8 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       if (value.trim() && !isLoading) {
+        // Stop the mic before submitting so the silence timer is also cleared
+        if (isListening) stopListening();
         onSend();
       }
     }
@@ -91,7 +94,11 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         )}
 
         <button
-          onClick={onSend}
+          onClick={() => {
+            // Stop the mic before submitting so the silence timer is also cleared
+            if (isListening) stopListening();
+            onSend();
+          }}
           disabled={!value.trim() || isLoading}
           className="shrink-0 p-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-white/5 disabled:text-white/20 text-white rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/20 disabled:shadow-none group border border-indigo-500/30 disabled:border-white/8"
           aria-label="Send message"

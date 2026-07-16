@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
+/** Milliseconds of silence before the microphone is automatically stopped. */
+const SILENCE_TIMEOUT_MS = 30_000;
+
 // Web Speech API interfaces
 interface SpeechRecognitionEvent extends Event {
   readonly resultIndex: number;
@@ -68,9 +71,12 @@ export const useSpeechToText = ({ onTranscriptChange }: UseSpeechToTextProps) =>
   });
   
   const recognitionRef = useRef<SpeechRecognition | null>(null);
-  
+
   // We keep track of the text that was in the input before the current speech session started
   const initialTextRef = useRef<string>("");
+
+  // Timer that fires after SILENCE_TIMEOUT_MS of no new speech results
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined" || !isSupported) return;
@@ -90,10 +96,19 @@ export const useSpeechToText = ({ onTranscriptChange }: UseSpeechToTextProps) =>
       for (let i = 0; i < event.results.length; i++) {
         currentTranscript += event.results[i][0].transcript;
       }
-      
+
       // Combine the text that existed before this session with the new transcript
       const separator = initialTextRef.current.trim() && currentTranscript.trim() ? " " : "";
       onTranscriptChange(initialTextRef.current + separator + currentTranscript);
+
+      // ── Silence debounce: reset the 30-second inactivity timer on every result ──
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = setTimeout(() => {
+        // Auto-stop after SILENCE_TIMEOUT_MS of no new speech
+        if (recognitionRef.current) recognitionRef.current.stop();
+        setIsListening(false);
+        silenceTimerRef.current = null;
+      }, SILENCE_TIMEOUT_MS);
     };
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
@@ -102,13 +117,21 @@ export const useSpeechToText = ({ onTranscriptChange }: UseSpeechToTextProps) =>
     };
 
     recognition.onend = () => {
-      // If it ends automatically (e.g. timeout), update state
+      // If it ends automatically (e.g. timeout or silence), update state and clear timer
+      if (silenceTimerRef.current) {
+        clearTimeout(silenceTimerRef.current);
+        silenceTimerRef.current = null;
+      }
       setIsListening(false);
     };
 
     recognitionRef.current = recognition;
 
     return () => {
+      if (silenceTimerRef.current) {
+        clearTimeout(silenceTimerRef.current);
+        silenceTimerRef.current = null;
+      }
       if (recognitionRef.current) {
         recognitionRef.current.stop();
       }
@@ -131,7 +154,13 @@ export const useSpeechToText = ({ onTranscriptChange }: UseSpeechToTextProps) =>
 
   const stopListening = useCallback(() => {
     if (!isSupported || !recognitionRef.current) return;
-    
+
+    // Clear the silence timer when stopping manually (e.g. on answer submit)
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+
     recognitionRef.current.stop();
     setIsListening(false);
   }, [isSupported]);
