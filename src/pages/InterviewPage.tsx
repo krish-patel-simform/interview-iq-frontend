@@ -255,14 +255,7 @@ function InterviewPage() {
     if (!config) return;
 
     timerRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          if (timerRef.current) clearInterval(timerRef.current);
-          handleEndInterview();
-          return 0;
-        }
-        return prev - 1;
-      });
+      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
 
     return () => {
@@ -270,6 +263,18 @@ function InterviewPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // End interview automatically when time runs out
+  useEffect(() => {
+    if (timeLeft === 0 && !isEnding) {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+      (() => {
+        handleEndInterview();
+      })();
+    }
+  }, [timeLeft, isEnding, handleEndInterview]);
 
   // If no config, redirect back to setup
   if (!config) {
